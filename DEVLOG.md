@@ -4,10 +4,10 @@ Dense notes for session continuity. Not a tutorial — just enough to get up to 
 
 ---
 
-## Current state (2026-04-28, updated)
+## Current state (2026-05-04, updated)
 
 **Branch:** master  
-**Key uncommitted changes:** see `git diff HEAD` — all bond validation, CABILN notation, cap monomers, slot renumbering, and tests are uncommitted.
+**Committed:** 100% library round-trip (1001/1001 monomers), C-attachment carboxyl convention, all slot renumbering.
 
 ### What the codebase is now
 
@@ -17,9 +17,9 @@ Dense notes for session continuity. Not a tutorial — just enough to get up to 
 | `src/pyPept/molecule.py` | `__restore_and_remove_rgroups` (Kekulize-first), `SanitizeMol` wrapped as `ValueError` |
 | `src/pyPept/interfaces/monomer_pipeline.py` | Full SMARTS pipeline: `pre_activate`, `build_library_from_csv`, `import_helm_sdf`, `normalize_input`, `find_sidechain_slots` (CABILN slot order) |
 | `src/pyPept/interfaces/map_monomers.py` | Deprecation shim only — redirects to `monomer_pipeline` |
-| `src/pyPept/data/monomers.sdf` | **Replaced** — 52-monomer CHUCKLES-format file, CABILN slot convention |
+| `src/pyPept/data/monomers.sdf` | **Replaced** — 1001-monomer CHUCKLES-format file, CABILN slot convention |
 | `src/pyPept/data/monomers.csv` | Authoring source for the 52-monomer library |
-| `tests/test_bond_validation_and_assembly.py` | 83 tests — Phase 1 + Phase 2 CABILN parser |
+| `tests/test_bond_validation_and_assembly.py` | 572 tests (571 pass, 1 xfail) — full coverage including library round-trip |
 
 ---
 
@@ -65,9 +65,9 @@ Dense notes for session continuity. Not a tutorial — just enough to get up to 
 
 ```
 ac-C.!1(4,4)-G-C.!1(4,4)-am       # disulfide crosslink via Cys thiol (R4)
-fmoc-C.trt(4,1)-am                 # Cys thiol protected with Trt
-fmoc-C.acm(4,1)-am                 # Cys thiol protected with Acm
-fmoc-R.pbf(4,1)-am                 # Arg guanidinium protected with Pbf
+fmoc-C.trt(4,2)-am                 # Cys thiol protected with Trt (trt R2)
+fmoc-C.acm(4,2)-am                 # Cys thiol protected with Acm (acm R2)
+fmoc-R.pbf(4,2)-am                 # Arg guanidinium protected with Pbf (pbf R2)
 K.ac(2,1)                          # ac cap on Lys C-terminal R2
 ```
 
@@ -141,25 +141,25 @@ SDF (one mol per token, properties: token, name, type, chuckles, r1_leaving, ...
 
 ## Protecting-group caps (2026-04-28)
 
-Total library: **52 monomers** (44 standard AAs + 8 caps).
+Total library: **1001 monomers** (amino acids, caps, linkers, bioconjugation handles, etc.).
 
 | Token | Description | Bond to residue | Bond type |
 |-------|-------------|-----------------|-----------|
 | `ac` | Acetyl N-terminal cap | R2=carbonyl C | amide (silent) |
 | `am` | Amide C-terminal cap | R1=N | amide (silent) |
 | `fmoc` | Fmoc N-terminal cap | R2=carbonyl C | amide (silent) |
-| `boc` | Boc sidechain amine PG | R1=carbonyl C | N–C(=O) carbamate |
-| `tbu` | tBu ester sidechain PG | R1=C(=O) | ester (silent) |
+| `boc` | Boc sidechain amine PG | R2=carbonyl C | N–C(=O) carbamate |
+| `tbu` | tBu ester sidechain PG | R1=O | O–C ester (silent) |
 | `otbu` | tBu ether sidechain PG | R1=C | O–C ether (UserWarning) |
-| `trt` | Trityl Cys thiol PG | R1=C | S–C thioether (UserWarning) |
-| `acm` | Acetamidomethyl Cys thiol PG | R1=C | S–C thioether (UserWarning) |
-| `pbf` | Pbf Arg guanidinium PG | R1=S | S–N sulfenamide (UserWarning) |
+| `trt` | Trityl Cys thiol PG | R2=C (LG=[Cl]) | S–C thioether (UserWarning) |
+| `acm` | Acetamidomethyl Cys thiol PG | R2=C (LG=[Cl]), R4=amide N | S–C thioether (UserWarning) |
+| `pbf` | Pbf Arg guanidinium PG | R2=sulfonyl S | S–N sulfenamide (UserWarning) |
 
 Usage:
 ```
-fmoc-C.trt(4,1)-am        # Cys thiol (R4) protected with Trt; trt R1→Cys R4
-fmoc-C.acm(4,1)-am        # Cys thiol protected with Acm
-fmoc-R.pbf(4,1)-am        # Arg guanidinium (R4) protected with Pbf
+fmoc-C.trt(4,2)-am        # Cys thiol (R4) protected with Trt; trt R2→Cys R4
+fmoc-C.acm(4,2)-am        # Cys thiol protected with Acm; acm R2→Cys R4
+fmoc-R.pbf(4,2)-am        # Arg guanidinium (R4) protected with Pbf; pbf R2→Arg R4
 ```
 
 ---
@@ -237,9 +237,9 @@ src/pyPept/
     monomer_pipeline.py — pre_activate, build_library_from_csv, find_sidechain_slots
     map_monomers.py     — deprecation shim only
   data/
-    monomers.sdf        — 52-monomer CABILN library (authoritative)
+    monomers.sdf        — 1001-monomer CABILN library (authoritative)
     monomers.csv        — CSV authoring source
 
 tests/
-  test_bond_validation_and_assembly.py  — 55 tests, all passing
+  test_bond_validation_and_assembly.py  — 572 tests (571 pass, 1 xfail)
 ```
